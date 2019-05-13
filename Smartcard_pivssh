@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Who is logged in
+loggedInUser=$(scutil <<< "show State:/Users/ConsoleUser" | awk -F': ' '/[[:space:]]+Name[[:space:]]:/ { if ( $2 != "loginwindow" ) { print $2 }}  ')
+
+bash="/Users/$loggedInUser/.bash_profile"
+zsh="/Users/$loggedInUser/.zshrc"
+
+addBash (){
+	# Added EOF Section to create an empty line before adding the alias to the bash_profile. 
+	cat >> "$bash" << EOF
+	
+alias pivssh='ssh -A -o PKCS11Provider=/usr/lib/ssh-keychain.dylib'
+EOF
+	
+}
+
+addZSH (){
+	# Added EOF Section to create an empty line before adding the alias to the bash_profile.
+	cat >> "$zsh" << EOF
+	
+alias pivssh='ssh -A -o PKCS11Provider=/usr/lib/ssh-keychain.dylib'
+EOF
+}
+
+if [ -f "$bash" ]; then
+		checkBash=$(grep 'alias pivssh' "$bash")
+			if [ "$checkBash" = "" ]; then
+				echo "adding alias to .bash_profile"
+				addBash
+			else
+				echo "Alias already added to .bash_profile"
+			fi
+		else
+			echo ".bash_profile not present, creating"
+			sudo -u "$loggedInUser" touch "$bash"
+			addBash
+fi
+
+
+if [ -f "$zsh" ]; then
+		checkZSH=$(grep 'alias pivssh' "$zsh")
+			if [ "$checkZSH" = "" ]; then
+				echo "Adding alias to .zshrc"
+				addZSH
+			else
+				echo "Alias already added to .zshrc"
+			fi
+		else
+			echo "zshrc not present, creating"
+			sudo -u "$loggedInUser" touch "$zsh"
+			addZSH
+fi
